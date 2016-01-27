@@ -17,40 +17,26 @@
  */
 package org.apache.gora.hbase.store;
 
-import java.io.IOException;
-import java.io.InterruptedIOException;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-
+import com.google.protobuf.Descriptors.MethodDescriptor;
+import com.google.protobuf.Message;
+import com.google.protobuf.Service;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.Append;
-import org.apache.hadoop.hbase.client.Delete;
-import org.apache.hadoop.hbase.client.Durability;
-import org.apache.hadoop.hbase.client.Get;
-import org.apache.hadoop.hbase.client.HTable;
-import org.apache.hadoop.hbase.client.HTableInterface;
-import org.apache.hadoop.hbase.client.Increment;
-import org.apache.hadoop.hbase.client.Put;
-import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.client.ResultScanner;
-import org.apache.hadoop.hbase.client.RetriesExhaustedWithDetailsException;
-import org.apache.hadoop.hbase.client.Row;
-import org.apache.hadoop.hbase.client.RowMutations;
-import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.client.coprocessor.Batch.Call;
 import org.apache.hadoop.hbase.client.coprocessor.Batch.Callback;
 import org.apache.hadoop.hbase.filter.CompareFilter.CompareOp;
 import org.apache.hadoop.hbase.ipc.CoprocessorRpcChannel;
 import org.apache.hadoop.hbase.util.Pair;
 
-import com.google.protobuf.Descriptors.MethodDescriptor;
-import com.google.protobuf.Message;
-import com.google.protobuf.Service;
+import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Thread safe implementation to connect to a HBase table.
@@ -93,7 +79,7 @@ public class HBaseTableConnection implements HTableInterface {
     if (table == null) {
       table = new HTable(conf, tableName) {
         @Override
-        public synchronized void flushCommits() throws RetriesExhaustedWithDetailsException, InterruptedIOException {
+        public synchronized void flushCommits() throws IOException,RetriesExhaustedWithDetailsException, InterruptedIOException {
           super.flushCommits();
         }
       };
@@ -266,24 +252,37 @@ public class HBaseTableConnection implements HTableInterface {
 
   @Override
   public void setAutoFlush(boolean autoFlush) {
-    // TODO Auto-generated method stub
-    
+    try {
+      getTable().setAutoFlushTo(autoFlush);
+    }
+    catch(IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
   public void setAutoFlush(boolean autoFlush, boolean clearBufferOnFail){
-    // TODO Auto-generated method stub
+    try{
+      getTable().setAutoFlush(autoFlush, clearBufferOnFail);
+    }
+    catch(IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
   public long getWriteBufferSize() {
-    // TODO Auto-generated method stub
-    return 0;
+    try{
+      return getTable().getWriteBufferSize();
+    }
+    catch(IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
   public void setWriteBufferSize(long writeBufferSize) throws IOException {
-    // TODO Auto-generated method stub
+    getTable().setWriteBufferSize(writeBufferSize);
   }
 
   @Override
@@ -319,8 +318,11 @@ public class HBaseTableConnection implements HTableInterface {
 
   @Override
   public CoprocessorRpcChannel coprocessorService(byte[] row) {
-    // TODO Auto-generated method stub
-    return null;
+    try {
+      return getTable().coprocessorService(row);
+    } catch(IOException e){
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
@@ -336,8 +338,12 @@ public class HBaseTableConnection implements HTableInterface {
   }
 
   @Override
-  public void setAutoFlushTo(boolean autoFlush) {
-    // TODO Auto-generated method stub    
+  public void setAutoFlushTo(boolean autoFlush){
+    try {
+      getTable().setAutoFlushTo(autoFlush);
+    } catch(IOException e){
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
@@ -364,7 +370,21 @@ public class HBaseTableConnection implements HTableInterface {
   @Override
   public boolean checkAndMutate(byte[] arg0, byte[] arg1, byte[] arg2, CompareOp arg3, byte[] arg4,
       RowMutations arg5) throws IOException {
-    // TODO Auto-generated method stub
-    return false;
+    return getTable().checkAndMutate(arg0, arg1, arg2, arg3, arg4, arg5);
+  }
+
+  @Override
+  public boolean[] existsAll(List<Get> gets) throws IOException {
+    return getTable().existsAll(gets);
+  }
+
+  @Override
+  public boolean checkAndPut(byte[] row, byte[] family, byte[] qualifier, CompareOp compareOp, byte[] value, Put put) throws IOException {
+    return getTable().checkAndPut(row, family, qualifier, compareOp, value, put);
+  }
+
+  @Override
+  public boolean checkAndDelete(byte[] row, byte[] family, byte[] qualifier, CompareOp compareOp, byte[] value, Delete delete) throws IOException {
+    return getTable().checkAndDelete(row, family, qualifier, compareOp, value, delete);
   }
 }
