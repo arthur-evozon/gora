@@ -224,15 +224,20 @@ public class SolrStore<K, T extends PersistentBase> extends DataStoreBase<K, T> 
       // CloudSolrServer - denoted by "cloud" in properties
     } else if (solrJServerType.toLowerCase(Locale.getDefault()).equals("cloud")) {
       LOG.info("Using CloudSolrServer Solrj implementation.");
-      this.adminServer = new CloudSolrServer(solrServerUrl);
-      this.server = new CloudSolrServer( solrServerUrl + "/" + mapping.getCoreName() );
-      if (serverUserAuth) {
-        HttpClientUtil.setBasicAuth(
-                (DefaultHttpClient) ((CloudSolrServer) adminServer).getLbServer().getHttpClient(),
-                serverUsername, serverPassword);
-        HttpClientUtil.setBasicAuth(
-                (DefaultHttpClient) ((CloudSolrServer) server).getLbServer().getHttpClient(),
-                serverUsername, serverPassword);
+      try{
+        this.adminServer = new CloudSolrServer(solrServerUrl);
+        this.server = new CloudSolrServer( solrServerUrl + "/" + mapping.getCoreName() );
+        if (serverUserAuth) {
+          HttpClientUtil.setBasicAuth(
+                  (DefaultHttpClient) ((CloudSolrServer) adminServer).getLbServer().getHttpClient(),
+                  serverUsername, serverPassword);
+          HttpClientUtil.setBasicAuth(
+                  (DefaultHttpClient) ((CloudSolrServer) server).getLbServer().getHttpClient(),
+                  serverUsername, serverPassword);
+        }
+      } catch (MalformedURLException e) {
+        LOG.error(e.getMessage());
+        throw new RuntimeException(e);
       }
     } else if (solrJServerType.toLowerCase(Locale.getDefault()).equals("concurrent")) {
       LOG.info("Using ConcurrentUpdateSolrServer Solrj implementation.");
