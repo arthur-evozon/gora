@@ -4,9 +4,9 @@
  * copyright ownership. The ASF licenses this file to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance with the License. You may obtain a
  * copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software distributed under the License
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
@@ -44,8 +44,6 @@ import org.apache.gora.util.AvroUtils;
 import org.apache.gora.util.IOUtils;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.*;
@@ -80,13 +78,13 @@ public class SolrStore<K, T extends PersistentBase> extends DataStoreBase<K, T> 
   protected static final String SOLR_SCHEMA_PROPERTY = "solr.schema";
 
   /** A batch size unit (ArrayList) of SolrDocument's to be used for writing to Solr.
-   * Should be defined in <code>gora.properties</code>. 
+   * Should be defined in <code>gora.properties</code>.
    * A default value of 100 is used if this value is absent. This value must be of type <b>Integer</b>.
    */
   protected static final String SOLR_BATCH_SIZE_PROPERTY = "solr.batch_size";
 
   /** The solrj implementation to use. This has a default value of <i>http</i> for HttpSolrServer.
-   * Available options include <b>http</b>, <b>cloud</b>, <b>concurrent</b> and <b>loadbalance</b>. 
+   * Available options include <b>http</b>, <b>cloud</b>, <b>concurrent</b> and <b>loadbalance</b>.
    * Defined in <code>gora.properties</code>
    * This value must be of type <b>String</b>.
    */
@@ -114,31 +112,31 @@ public class SolrStore<K, T extends PersistentBase> extends DataStoreBase<K, T> 
   protected static final String SOLR_SERVER_PASSWORD = "solr.solrjserver.password";
 
   /** A batch commit unit for SolrDocument's used when making (commit) calls to Solr.
-   * Should be defined in <code>gora.properties</code>. 
+   * Should be defined in <code>gora.properties</code>.
    * A default value of 1000 is used if this value is absent. This value must be of type <b>Integer</b>.
    */
   protected static final String SOLR_COMMIT_WITHIN_PROPERTY = "solr.commit_within";
 
-  /** The maximum number of result to return when we make a call to 
-   * {@link org.apache.gora.solr.store.SolrStore#execute(Query)}. This should be 
+  /** The maximum number of result to return when we make a call to
+   * {@link org.apache.gora.solr.store.SolrStore#execute(Query)}. This should be
    * defined in <code>gora.properties</code>. This value must be of type <b>Integer</b>.
    */
   protected static final String SOLR_RESULTS_SIZE_PROPERTY = "solr.results_size";
 
-  /** The default batch size (ArrayList) of SolrDocuments to be used in the event of an absent 
-   * value for <code>solr.batchSize</code>. 
+  /** The default batch size (ArrayList) of SolrDocuments to be used in the event of an absent
+   * value for <code>solr.batchSize</code>.
    * Set to 100 by default.
    */
   protected static final int DEFAULT_BATCH_SIZE = 100;
 
-  /** The default commit size of SolrDocuments to be used in the event of an absent 
-   * value for <code>solr.commitSize</code>. 
+  /** The default commit size of SolrDocuments to be used in the event of an absent
+   * value for <code>solr.commitSize</code>.
    * Set to 1000 by default.
    */
   protected static final int DEFAULT_COMMIT_WITHIN = 1000;
 
-  /** The default results size of SolrDocuments to be used in the event of an absent 
-   * value for <code>solr.resultsSize</code>. 
+  /** The default results size of SolrDocuments to be used in the event of an absent
+   * value for <code>solr.resultsSize</code>.
    * Set to 100 by default.
    */
   protected static final int DEFAULT_RESULTS_SIZE = 100;
@@ -147,7 +145,7 @@ public class SolrStore<K, T extends PersistentBase> extends DataStoreBase<K, T> 
 
   private String solrServerUrl, solrConfig, solrSchema, solrJServerImpl;
 
-  private SolrClient server, adminServer;
+  private SolrServer server, adminServer;
 
   private boolean serverUserAuth;
 
@@ -182,60 +180,59 @@ public class SolrStore<K, T extends PersistentBase> extends DataStoreBase<K, T> 
 
   @Override
   public void initialize(Class<K> keyClass, Class<T> persistentClass,
-      Properties properties) {
+                         Properties properties) {
     super.initialize(keyClass, persistentClass, properties);
     try {
       String mappingFile = DataStoreFactory.getMappingFile(properties, this,
-          DEFAULT_MAPPING_FILE);
+              DEFAULT_MAPPING_FILE);
       mapping = readMapping(mappingFile);
     } catch (IOException e) {
       LOG.error(e.getMessage(), e);
     }
 
     solrServerUrl = DataStoreFactory.findProperty(properties, this,
-        SOLR_URL_PROPERTY, null);
+            SOLR_URL_PROPERTY, null);
     solrConfig = DataStoreFactory.findProperty(properties, this,
-        SOLR_CONFIG_PROPERTY, null);
+            SOLR_CONFIG_PROPERTY, null);
     solrSchema = DataStoreFactory.findProperty(properties, this,
-        SOLR_SCHEMA_PROPERTY, null);
-    solrJServerImpl = DataStoreFactory.findProperty(properties, this, 
-        SOLR_SOLRJSERVER_IMPL, "http");
+            SOLR_SCHEMA_PROPERTY, null);
+    solrJServerImpl = DataStoreFactory.findProperty(properties, this,
+            SOLR_SOLRJSERVER_IMPL, "http");
     serverUserAuth = DataStoreFactory.findBooleanProperty(properties, this,
-        SOLR_SERVER_USER_AUTH, "false");
+            SOLR_SERVER_USER_AUTH, "false");
     if (serverUserAuth) {
       serverUsername = DataStoreFactory.findProperty(properties, this,
-          SOLR_SERVER_USERNAME, null);
+              SOLR_SERVER_USERNAME, null);
       serverPassword = DataStoreFactory.findProperty(properties, this,
-          SOLR_SERVER_PASSWORD, null);
+              SOLR_SERVER_PASSWORD, null);
     }
     LOG.info("Using Solr server at " + solrServerUrl);
     String solrJServerType = ((solrJServerImpl == null || solrJServerImpl.equals(""))?"http":solrJServerImpl);
     // HttpSolrServer - denoted by "http" in properties
     if (solrJServerType.toLowerCase(Locale.getDefault()).equals("http")) {
       LOG.info("Using HttpSolrServer Solrj implementation.");
-      this.adminServer = new HttpSolrClient(solrServerUrl);
-      this.server = new HttpSolrClient( solrServerUrl + "/" + mapping.getCoreName() );
+      this.adminServer = new HttpSolrServer(solrServerUrl);
+      this.server = new HttpSolrServer( solrServerUrl + "/" + mapping.getCoreName() );
       if (serverUserAuth) {
         HttpClientUtil.setBasicAuth(
-            (DefaultHttpClient) ((HttpSolrClient) adminServer).getHttpClient(),
-            serverUsername, serverPassword);
+                (DefaultHttpClient) ((HttpSolrServer) adminServer).getHttpClient(),
+                serverUsername, serverPassword);
         HttpClientUtil.setBasicAuth(
-            (DefaultHttpClient) ((HttpSolrServer) server).getHttpClient(),
-            serverUsername, serverPassword);
+                (DefaultHttpClient) ((HttpSolrServer) server).getHttpClient(),
+                serverUsername, serverPassword);
       }
       // CloudSolrServer - denoted by "cloud" in properties
     } else if (solrJServerType.toLowerCase(Locale.getDefault()).equals("cloud")) {
       LOG.info("Using CloudSolrServer Solrj implementation.");
-      this.adminServer = new CloudSolrClient(solrServerUrl);
+      this.adminServer = new CloudSolrServer(solrServerUrl);
       this.server = new CloudSolrServer( solrServerUrl + "/" + mapping.getCoreName() );
       if (serverUserAuth) {
-
         HttpClientUtil.setBasicAuth(
-            (DefaultHttpClient) ((CloudSolrClient) adminServer).getLbClient().getHttpClient(),
-            serverUsername, serverPassword);
+                (DefaultHttpClient) ((CloudSolrServer) adminServer).getLbServer().getHttpClient(),
+                serverUsername, serverPassword);
         HttpClientUtil.setBasicAuth(
-            (DefaultHttpClient) ((CloudSolrClient) server).getLbClient().getHttpClient(),
-            serverUsername, serverPassword);
+                (DefaultHttpClient) ((CloudSolrServer) server).getLbServer().getHttpClient(),
+                serverUsername, serverPassword);
       }
     } else if (solrJServerType.toLowerCase(Locale.getDefault()).equals("concurrent")) {
       LOG.info("Using ConcurrentUpdateSolrServer Solrj implementation.");
@@ -259,18 +256,18 @@ public class SolrStore<K, T extends PersistentBase> extends DataStoreBase<K, T> 
       }
       if (serverUserAuth) {
         HttpClientUtil.setBasicAuth(
-            (DefaultHttpClient) ((LBHttpSolrServer) adminServer).getHttpClient(),
-            serverUsername, serverPassword);
+                (DefaultHttpClient) ((LBHttpSolrServer) adminServer).getHttpClient(),
+                serverUsername, serverPassword);
         HttpClientUtil.setBasicAuth(
-            (DefaultHttpClient) ((LBHttpSolrServer) server).getHttpClient(),
-            serverUsername, serverPassword);
+                (DefaultHttpClient) ((LBHttpSolrServer) server).getHttpClient(),
+                serverUsername, serverPassword);
       }
     }
     if (autoCreateSchema) {
       createSchema();
     }
     String batchSizeString = DataStoreFactory.findProperty(properties, this,
-        SOLR_BATCH_SIZE_PROPERTY, null);
+            SOLR_BATCH_SIZE_PROPERTY, null);
     if (batchSizeString != null) {
       try {
         batchSize = Integer.parseInt(batchSizeString);
@@ -280,7 +277,7 @@ public class SolrStore<K, T extends PersistentBase> extends DataStoreBase<K, T> 
     }
     batch = new ArrayList<>(batchSize);
     String commitWithinString = DataStoreFactory.findProperty(properties, this,
-        SOLR_COMMIT_WITHIN_PROPERTY, null);
+            SOLR_COMMIT_WITHIN_PROPERTY, null);
     if (commitWithinString != null) {
       try {
         commitWithin = Integer.parseInt(commitWithinString);
@@ -289,7 +286,7 @@ public class SolrStore<K, T extends PersistentBase> extends DataStoreBase<K, T> 
       }
     }
     String resultsSizeString = DataStoreFactory.findProperty(properties, this,
-        SOLR_RESULTS_SIZE_PROPERTY, null);
+            SOLR_RESULTS_SIZE_PROPERTY, null);
     if (resultsSizeString != null) {
       try {
         resultsSize = Integer.parseInt(resultsSizeString);
@@ -305,18 +302,18 @@ public class SolrStore<K, T extends PersistentBase> extends DataStoreBase<K, T> 
     try {
       SAXBuilder builder = new SAXBuilder();
       Document doc = builder.build(getClass().getClassLoader()
-          .getResourceAsStream(filename));
+              .getResourceAsStream(filename));
 
       List<Element> classes = doc.getRootElement().getChildren("class");
 
       for (Element classElement : classes) {
         if (classElement.getAttributeValue("keyClass").equals(
-            keyClass.getCanonicalName())
-            && classElement.getAttributeValue("name").equals(
+                keyClass.getCanonicalName())
+                && classElement.getAttributeValue("name").equals(
                 persistentClass.getCanonicalName())) {
 
           String tableName = getSchemaName(
-              classElement.getAttributeValue("table"), persistentClass);
+                  classElement.getAttributeValue("table"), persistentClass);
           map.setCoreName(tableName);
 
           Element primaryKeyEl = classElement.getChild("primarykey");
@@ -332,9 +329,9 @@ public class SolrStore<K, T extends PersistentBase> extends DataStoreBase<K, T> 
           break;
         }
         LOG.warn("Check that 'keyClass' and 'name' parameters in gora-solr-mapping.xml "
-            + "match with intended values. A mapping mismatch has been found therefore "
-            + "no mapping has been initialized for class mapping at position " 
-            + " {} in mapping file.", classes.indexOf(classElement));
+                + "match with intended values. A mapping mismatch has been found therefore "
+                + "no mapping has been initialized for class mapping at position "
+                + " {} in mapping file.", classes.indexOf(classElement));
       }
     } catch (Exception ex) {
       throw new IOException(ex);
@@ -357,7 +354,7 @@ public class SolrStore<K, T extends PersistentBase> extends DataStoreBase<K, T> 
     try {
       if (!schemaExists())
         CoreAdminRequest.createCore(mapping.getCoreName(),
-            mapping.getCoreName(), adminServer, solrConfig, solrSchema);
+                mapping.getCoreName(), adminServer, solrConfig, solrSchema);
     } catch (Exception e) {
       LOG.error(e.getMessage(), e);
     }
@@ -401,7 +398,7 @@ public class SolrStore<K, T extends PersistentBase> extends DataStoreBase<K, T> 
     boolean exists = false;
     try {
       CoreAdminResponse rsp = CoreAdminRequest.getStatus(mapping.getCoreName(),
-          adminServer);
+              adminServer);
       exists = rsp.getUptime(mapping.getCoreName()) != null;
     } catch (Exception e) {
       LOG.error(e.getMessage(), e);
@@ -430,12 +427,12 @@ public class SolrStore<K, T extends PersistentBase> extends DataStoreBase<K, T> 
     for (int i = 0; i < key.length(); i++) {
       char c = key.charAt(i);
       switch (c) {
-      case ':':
-      case '*':
-        sb.append("\\").append(c);
-        break;
-      default:
-        sb.append(c);
+        case ':':
+        case '*':
+          sb.append("\\").append(c);
+          break;
+        default:
+          sb.append(c);
       }
     }
     return sb.toString();
@@ -515,59 +512,59 @@ public class SolrStore<K, T extends PersistentBase> extends DataStoreBase<K, T> 
 
   @SuppressWarnings("unchecked")
   private Object deserializeFieldValue(Field field, Schema fieldSchema,
-      Object solrValue, T persistent) throws IOException {
+                                       Object solrValue, T persistent) throws IOException {
     Object fieldValue = null;
     switch (fieldSchema.getType()) {
-    case MAP:
-    case ARRAY:
-    case RECORD:
-      @SuppressWarnings("rawtypes")
-      SpecificDatumReader reader = getDatumReader(fieldSchema.getFullName(),
-          fieldSchema);
-      fieldValue = IOUtils.deserialize((byte[]) solrValue, reader,
-          persistent.get(field.pos()));
-      break;
-    case ENUM:
-      fieldValue = AvroUtils.getEnumValue(fieldSchema, (String) solrValue);
-      break;
-    case FIXED:
-      throw new IOException("???");
-      // break;
-    case BYTES:
-      fieldValue = ByteBuffer.wrap((byte[]) solrValue);
-      break;
-    case STRING:
-      fieldValue = new Utf8(solrValue.toString());
-      break;
-    case UNION:
-      if (fieldSchema.getTypes().size() == 2 && isNullable(fieldSchema)) {
-        // schema [type0, type1]
-        Type type0 = fieldSchema.getTypes().get(0).getType();
-        Type type1 = fieldSchema.getTypes().get(1).getType();
-
-        // Check if types are different and there's a "null", like
-        // ["null","type"] or ["type","null"]
-        if (!type0.equals(type1)) {
-          if (type0.equals(Schema.Type.NULL))
-            fieldSchema = fieldSchema.getTypes().get(1);
-          else
-            fieldSchema = fieldSchema.getTypes().get(0);
-        } else {
-          fieldSchema = fieldSchema.getTypes().get(0);
-        }
-        fieldValue = deserializeFieldValue(field, fieldSchema, solrValue,
-            persistent);
-      } else {
+      case MAP:
+      case ARRAY:
+      case RECORD:
         @SuppressWarnings("rawtypes")
-        SpecificDatumReader unionReader = getDatumReader(
-            String.valueOf(fieldSchema.hashCode()), fieldSchema);
-        fieldValue = IOUtils.deserialize((byte[]) solrValue, unionReader,
-            persistent.get(field.pos()));
+        SpecificDatumReader reader = getDatumReader(fieldSchema.getFullName(),
+                fieldSchema);
+        fieldValue = IOUtils.deserialize((byte[]) solrValue, reader,
+                persistent.get(field.pos()));
         break;
-      }
-      break;
-    default:
-      fieldValue = solrValue;
+      case ENUM:
+        fieldValue = AvroUtils.getEnumValue(fieldSchema, (String) solrValue);
+        break;
+      case FIXED:
+        throw new IOException("???");
+        // break;
+      case BYTES:
+        fieldValue = ByteBuffer.wrap((byte[]) solrValue);
+        break;
+      case STRING:
+        fieldValue = new Utf8(solrValue.toString());
+        break;
+      case UNION:
+        if (fieldSchema.getTypes().size() == 2 && isNullable(fieldSchema)) {
+          // schema [type0, type1]
+          Type type0 = fieldSchema.getTypes().get(0).getType();
+          Type type1 = fieldSchema.getTypes().get(1).getType();
+
+          // Check if types are different and there's a "null", like
+          // ["null","type"] or ["type","null"]
+          if (!type0.equals(type1)) {
+            if (type0.equals(Schema.Type.NULL))
+              fieldSchema = fieldSchema.getTypes().get(1);
+            else
+              fieldSchema = fieldSchema.getTypes().get(0);
+          } else {
+            fieldSchema = fieldSchema.getTypes().get(0);
+          }
+          fieldValue = deserializeFieldValue(field, fieldSchema, solrValue,
+                  persistent);
+        } else {
+          @SuppressWarnings("rawtypes")
+          SpecificDatumReader unionReader = getDatumReader(
+                  String.valueOf(fieldSchema.hashCode()), fieldSchema);
+          fieldValue = IOUtils.deserialize((byte[]) solrValue, unionReader,
+                  persistent.get(field.pos()));
+          break;
+        }
+        break;
+      default:
+        fieldValue = solrValue;
     }
     return fieldValue;
   }
@@ -615,50 +612,50 @@ public class SolrStore<K, T extends PersistentBase> extends DataStoreBase<K, T> 
   @SuppressWarnings("unchecked")
   private Object serializeFieldValue(Schema fieldSchema, Object fieldValue) {
     switch (fieldSchema.getType()) {
-    case MAP:
-    case ARRAY:
-    case RECORD:
-      byte[] data = null;
-      try {
-        @SuppressWarnings("rawtypes")
-        SpecificDatumWriter writer = getDatumWriter(fieldSchema.getFullName(),
-            fieldSchema);
-        data = IOUtils.serialize(writer, fieldValue);
-      } catch (IOException e) {
-        LOG.error(e.getMessage(), e);
-      }
-      fieldValue = data;
-      break;
-    case BYTES:
-      fieldValue = ((ByteBuffer) fieldValue).array();
-      break;
-    case ENUM:
-    case STRING:
-      fieldValue = fieldValue.toString();
-      break;
-    case UNION:
-      // If field's schema is null and one type, we do undertake serialization.
-      // All other types are serialized.
-      if (fieldSchema.getTypes().size() == 2 && isNullable(fieldSchema)) {
-        int schemaPos = getUnionSchema(fieldValue, fieldSchema);
-        Schema unionSchema = fieldSchema.getTypes().get(schemaPos);
-        fieldValue = serializeFieldValue(unionSchema, fieldValue);
-      } else {
-        byte[] serilazeData = null;
+      case MAP:
+      case ARRAY:
+      case RECORD:
+        byte[] data = null;
         try {
           @SuppressWarnings("rawtypes")
-          SpecificDatumWriter writer = getDatumWriter(
-              String.valueOf(fieldSchema.hashCode()), fieldSchema);
-          serilazeData = IOUtils.serialize(writer, fieldValue);
+          SpecificDatumWriter writer = getDatumWriter(fieldSchema.getFullName(),
+                  fieldSchema);
+          data = IOUtils.serialize(writer, fieldValue);
         } catch (IOException e) {
           LOG.error(e.getMessage(), e);
         }
-        fieldValue = serilazeData;
-      }
-      break;
-    default:
-      // LOG.error("Unknown field type: " + fieldSchema.getType());
-      break;
+        fieldValue = data;
+        break;
+      case BYTES:
+        fieldValue = ((ByteBuffer) fieldValue).array();
+        break;
+      case ENUM:
+      case STRING:
+        fieldValue = fieldValue.toString();
+        break;
+      case UNION:
+        // If field's schema is null and one type, we do undertake serialization.
+        // All other types are serialized.
+        if (fieldSchema.getTypes().size() == 2 && isNullable(fieldSchema)) {
+          int schemaPos = getUnionSchema(fieldValue, fieldSchema);
+          Schema unionSchema = fieldSchema.getTypes().get(schemaPos);
+          fieldValue = serializeFieldValue(unionSchema, fieldValue);
+        } else {
+          byte[] serilazeData = null;
+          try {
+            @SuppressWarnings("rawtypes")
+            SpecificDatumWriter writer = getDatumWriter(
+                    String.valueOf(fieldSchema.hashCode()), fieldSchema);
+            serilazeData = IOUtils.serialize(writer, fieldValue);
+          } catch (IOException e) {
+            LOG.error(e.getMessage(), e);
+          }
+          fieldValue = serilazeData;
+        }
+        break;
+      default:
+        // LOG.error("Unknown field type: " + fieldSchema.getType());
+        break;
     }
     return fieldValue;
   }
@@ -676,7 +673,7 @@ public class SolrStore<K, T extends PersistentBase> extends DataStoreBase<K, T> 
    * Given an object and the object schema this function obtains, from within
    * the UNION schema, the position of the type used. If no data type can be
    * inferred then we return a default value of position 0.
-   * 
+   *
    * @param pValue
    * @param pUnionSchema
    * @return the unionSchemaPosition.
@@ -717,7 +714,7 @@ public class SolrStore<K, T extends PersistentBase> extends DataStoreBase<K, T> 
     String keyField = mapping.getPrimaryKey();
     try {
       UpdateResponse rsp = server.deleteByQuery(keyField + ":"
-          + escapeQueryKey(key.toString()));
+              + escapeQueryKey(key.toString()));
       server.commit();
       LOG.info(rsp.toString());
       return true;
@@ -757,7 +754,7 @@ public class SolrStore<K, T extends PersistentBase> extends DataStoreBase<K, T> 
 
   @Override
   public List<PartitionQuery<K, T>> getPartitions(Query<K, T> query)
-      throws IOException {
+          throws IOException {
     // TODO: implement this using Hadoop DB support
 
     ArrayList<PartitionQuery<K, T>> partitions = new ArrayList<>();
@@ -786,7 +783,7 @@ public class SolrStore<K, T extends PersistentBase> extends DataStoreBase<K, T> 
   }
 
   private void add(ArrayList<SolrInputDocument> batch, int commitWithin)
-      throws SolrServerException, IOException {
+          throws SolrServerException, IOException {
     if (commitWithin == 0) {
       server.add(batch);
       server.commit(false, true, true);
