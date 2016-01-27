@@ -44,6 +44,8 @@ import org.apache.gora.util.AvroUtils;
 import org.apache.gora.util.IOUtils;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.*;
@@ -145,7 +147,7 @@ public class SolrStore<K, T extends PersistentBase> extends DataStoreBase<K, T> 
 
   private String solrServerUrl, solrConfig, solrSchema, solrJServerImpl;
 
-  private SolrServer server, adminServer;
+  private SolrClient server, adminServer;
 
   private boolean serverUserAuth;
 
@@ -211,11 +213,11 @@ public class SolrStore<K, T extends PersistentBase> extends DataStoreBase<K, T> 
     // HttpSolrServer - denoted by "http" in properties
     if (solrJServerType.toLowerCase(Locale.getDefault()).equals("http")) {
       LOG.info("Using HttpSolrServer Solrj implementation.");
-      this.adminServer = new HttpSolrServer(solrServerUrl);
-      this.server = new HttpSolrServer( solrServerUrl + "/" + mapping.getCoreName() );
+      this.adminServer = new HttpSolrClient(solrServerUrl);
+      this.server = new HttpSolrClient( solrServerUrl + "/" + mapping.getCoreName() );
       if (serverUserAuth) {
         HttpClientUtil.setBasicAuth(
-            (DefaultHttpClient) ((HttpSolrServer) adminServer).getHttpClient(),
+            (DefaultHttpClient) ((HttpSolrClient) adminServer).getHttpClient(),
             serverUsername, serverPassword);
         HttpClientUtil.setBasicAuth(
             (DefaultHttpClient) ((HttpSolrServer) server).getHttpClient(),
@@ -224,14 +226,15 @@ public class SolrStore<K, T extends PersistentBase> extends DataStoreBase<K, T> 
       // CloudSolrServer - denoted by "cloud" in properties
     } else if (solrJServerType.toLowerCase(Locale.getDefault()).equals("cloud")) {
       LOG.info("Using CloudSolrServer Solrj implementation.");
-      this.adminServer = new CloudSolrServer(solrServerUrl);
+      this.adminServer = new CloudSolrClient(solrServerUrl);
       this.server = new CloudSolrServer( solrServerUrl + "/" + mapping.getCoreName() );
       if (serverUserAuth) {
+
         HttpClientUtil.setBasicAuth(
-            (DefaultHttpClient) ((CloudSolrServer) adminServer).getLbServer().getHttpClient(),
+            (DefaultHttpClient) ((CloudSolrClient) adminServer).getLbClient().getHttpClient(),
             serverUsername, serverPassword);
         HttpClientUtil.setBasicAuth(
-            (DefaultHttpClient) ((CloudSolrServer) server).getLbServer().getHttpClient(),
+            (DefaultHttpClient) ((CloudSolrClient) server).getLbClient().getHttpClient(),
             serverUsername, serverPassword);
       }
     } else if (solrJServerType.toLowerCase(Locale.getDefault()).equals("concurrent")) {

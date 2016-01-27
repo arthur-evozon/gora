@@ -27,6 +27,7 @@ import org.apache.gora.query.impl.PartitionQueryImpl;
 import org.apache.gora.query.impl.ResultBase;
 import org.apache.gora.solr.store.SolrStore;
 import org.apache.gora.store.DataStore;
+import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.QueryResponse;
@@ -43,7 +44,7 @@ public class SolrResult<K, T extends PersistentBase> extends ResultBase<K, T> {
   int pos = 0;
 
   public SolrResult(DataStore<K, T> dataStore, Query<K, T> query,
-      SolrServer server, int resultsSize) throws IOException {
+                    SolrClient server, int resultsSize) throws IOException {
     super(dataStore, query);
     store = (SolrStore<K, T>)dataStore;
     ModifiableSolrParams params = new ModifiableSolrParams();
