@@ -17,20 +17,21 @@
  */
 package org.apache.gora.hbase.util;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.Charset;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseTestingUtility;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.MiniHBaseCluster;
+import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 
 /**
  * Class that will creates a single instance of HBase MiniCluster.
@@ -152,8 +153,8 @@ public final class HBaseClusterSingleton {
    */
   public void ensureTable(byte[] tableName, byte[][] cfs) throws IOException {
     HBaseAdmin admin = htu.getHBaseAdmin();
-    if (!admin.tableExists(tableName)) {
-      HTable hTable = htu.createTable(tableName, cfs);
+    if (!admin.tableExists(TableName.valueOf(tableName))) {
+      HTable hTable = htu.createTable(TableName.valueOf(tableName), cfs);
       hTable.close();
     }
   }
@@ -165,7 +166,7 @@ public final class HBaseClusterSingleton {
   public void truncateAllTables() throws Exception {
     HBaseAdmin admin = htu.getHBaseAdmin();
     for(HTableDescriptor table:admin.listTables()) {
-      HTable hTable = htu.truncateTable(table.getName());
+      HTable hTable = htu.truncateTable(TableName.valueOf(table.getName()));
       hTable.close();
     }
   }
@@ -178,8 +179,8 @@ public final class HBaseClusterSingleton {
   public void deleteAllTables() throws Exception {
     HBaseAdmin admin = htu.getHBaseAdmin();
     for(HTableDescriptor table:admin.listTables()) {
-      admin.disableTable(table.getName());
-      admin.deleteTable(table.getName());
+      admin.disableTable(TableName.valueOf(table.getName()));
+      admin.deleteTable(TableName.valueOf(table.getName()));
     }
   }
 

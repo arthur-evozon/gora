@@ -32,7 +32,6 @@ import org.apache.hadoop.hbase.ipc.CoprocessorRpcChannel;
 import org.apache.hadoop.hbase.util.Pair;
 
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -77,13 +76,15 @@ public class HBaseTableConnection implements HTableInterface {
   private HTable getTable() throws IOException {
     HTable table = tables.get();
     if (table == null) {
-      table = new HTable(conf, tableName) {
-        @Override
-        public synchronized void flushCommits() throws IOException,RetriesExhaustedWithDetailsException, InterruptedIOException {
-          super.flushCommits();
-        }
-      };
-      table.setAutoFlushTo(autoFlush);
+      Connection connection = ConnectionFactory.createConnection(conf);
+      table = (HTable)connection.getTable(tableName);
+//      table = new HTable(conf, tableName) {
+//        @Override
+//        public synchronized void flushCommits() throws IOException,RetriesExhaustedWithDetailsException, InterruptedIOException {
+//          super.flushCommits();
+//        }
+//      };
+      //table.setAutoFlushTo(autoFlush);
       pool.add(table); //keep track
       tables.set(table);
     }
@@ -119,18 +120,18 @@ public class HBaseTableConnection implements HTableInterface {
 
   /**
    * getStartEndKeys provided by {@link HTable} but not {@link HTableInterface}.
-   * @see HTable#getStartEndKeys()
+   * @see RegionLocator#getStartEndKeys()
    */
   public Pair<byte[][], byte[][]> getStartEndKeys() throws IOException {
-    return getTable().getStartEndKeys();
+    return getTable().getRegionLocator().getStartEndKeys();
   }
   /**
    * getRegionLocation provided by {@link HTable} but not 
    * {@link HTableInterface}.
-   * @see HTable#getRegionLocation(byte[])
+   * @see RegionLocator#getRegionLocation(byte[])
    */
   public HRegionLocation getRegionLocation(final byte[] bs) throws IOException {
-    return getTable().getRegionLocation(bs);
+    return getTable().getRegionLocator().getRegionLocation(bs);
   }
 
   @Override
@@ -153,10 +154,10 @@ public class HBaseTableConnection implements HTableInterface {
     return getTable().get(gets);
   }
 
-  @Override
-  public Result getRowOrBefore(byte[] row, byte[] family) throws IOException {
-    return getTable().getRowOrBefore(row, family);
-  }
+//  @Override
+//  public Result getRowOrBefore(byte[] row, byte[] family) throws IOException {
+//    return getTable().getRowOrBefore(row, family);
+//  }
 
   @Override
   public ResultScanner getScanner(Scan scan) throws IOException {
@@ -218,13 +219,13 @@ public class HBaseTableConnection implements HTableInterface {
     return getTable().incrementColumnValue(row, family, qualifier, amount);
   }
 
-  @Deprecated
-  @Override
-  public long incrementColumnValue(byte[] row, byte[] family, byte[] qualifier,
-      long amount, boolean writeToWAL) throws IOException {
-    return getTable().incrementColumnValue(row, family, qualifier, amount,
-        writeToWAL);
-  }
+//  @Deprecated
+//  @Override
+//  public long incrementColumnValue(byte[] row, byte[] family, byte[] qualifier,
+//      long amount, boolean writeToWAL) throws IOException {
+//    return getTable().incrementColumnValue(row, family, qualifier, amount,
+//        writeToWAL);
+//  }
 
   @Override
   public void flushCommits() throws IOException {
@@ -250,7 +251,6 @@ public class HBaseTableConnection implements HTableInterface {
     return getTable().append(append);
   }
 
-  @Override
   public void setAutoFlush(boolean autoFlush) {
     try {
       getTable().setAutoFlushTo(autoFlush);
@@ -290,10 +290,10 @@ public class HBaseTableConnection implements HTableInterface {
     return tableName;
   }
 
-  @Override
-  public Boolean[] exists(List<Get> gets) throws IOException {
-    return getTable().exists(gets);
-  }
+//  @Override
+//  public Boolean[] exists(List<Get> gets) throws IOException {
+//    return getTable().exists(gets);
+//  }
 
   @Override
   public <R> void
@@ -303,12 +303,12 @@ public class HBaseTableConnection implements HTableInterface {
     
   }
 
-  @Deprecated
-  @Override
-  public <R> Object[] batchCallback(List<? extends Row> actions, Callback<R> callback)
-      throws IOException, InterruptedException {
-    return getTable().batchCallback(actions, callback);
-  }
+//  @Deprecated
+//  @Override
+//  public <R> Object[] batchCallback(List<? extends Row> actions, Callback<R> callback)
+//      throws IOException, InterruptedException {
+//    return getTable().batchCallback(actions, callback);
+//  }
 
   @Override
   public long incrementColumnValue(byte[] row, byte[] family, byte[] qualifier, long amount,
@@ -361,11 +361,11 @@ public class HBaseTableConnection implements HTableInterface {
     
   }
 
-  @Deprecated
-  @Override
-  public Object[] batch(List<? extends Row> actions) throws IOException, InterruptedException {
-    return getTable().batch(actions);
-  }
+//  @Deprecated
+//  @Override
+//  public Object[] batch(List<? extends Row> actions) throws IOException, InterruptedException {
+//    return getTable().batch(actions);
+//  }
 
   @Override
   public boolean checkAndMutate(byte[] arg0, byte[] arg1, byte[] arg2, CompareOp arg3, byte[] arg4,
