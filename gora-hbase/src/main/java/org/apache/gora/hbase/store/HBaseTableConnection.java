@@ -120,12 +120,15 @@ public class HBaseTableConnection {
     // (As an extra safeguard one might employ a shared variable i.e. 'closed'
     //  in order to prevent further table creation but for now we assume that
     //  once close() is called, clients are no longer using it).
+
+    LOG.info("\n\n\t>>> closing connection\n");
+
     flushCommits();
 
     for (Table table : tPool) {
       table.close();
 
-      LOG.info("\n\n\t>>> closing '{}'...\n",table);
+      LOG.info("\n\n\t>>> closing connection to '{}'...\n",table);
     }
   }
 
