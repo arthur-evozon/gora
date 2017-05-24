@@ -17,34 +17,28 @@
  */
 package org.apache.gora.hbase.store;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HRegionLocation;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.util.Pair;
+import org.slf4j.Logger;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HRegionLocation;
-import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.BufferedMutator;
-import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.client.ConnectionFactory;
-import org.apache.hadoop.hbase.client.Delete;
-import org.apache.hadoop.hbase.client.Get;
-import org.apache.hadoop.hbase.client.Mutation;
-import org.apache.hadoop.hbase.client.Put;
-import org.apache.hadoop.hbase.client.RegionLocator;
-import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.client.ResultScanner;
-import org.apache.hadoop.hbase.client.Scan;
-import org.apache.hadoop.hbase.client.Table;
-import org.apache.hadoop.hbase.util.Pair;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Thread safe implementation to connect to a HBase table.
  *
  */
 public class HBaseTableConnection {
+  private static final Logger LOG = getLogger(HBaseTableConnection.class);
+
   /*
    * The current implementation uses ThreadLocal HTable instances. It keeps
    * track of the floating instances in order to correctly flush and close
@@ -128,6 +122,8 @@ public class HBaseTableConnection {
 
     for (Table table : tPool) {
       table.close();
+
+      LOG.info("\n\n\t>>> closing '{}'...\n",table);
     }
   }
 
