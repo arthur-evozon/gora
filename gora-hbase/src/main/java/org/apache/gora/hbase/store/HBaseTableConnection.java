@@ -80,7 +80,7 @@ public class HBaseTableConnection {
 
     this.autoFlush = autoflush;
 
-    LOG.info("\n\n\t>>> opening connection to '{}'\n",tableName);
+    LOG.info("\n\t>>> opening connection to '{}'",tableName);
   }
 
   private Table getTable() throws IOException {
