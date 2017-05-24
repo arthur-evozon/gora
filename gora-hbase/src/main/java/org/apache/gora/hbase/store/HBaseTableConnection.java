@@ -79,6 +79,8 @@ public class HBaseTableConnection {
     this.regionLocator = this.connection.getRegionLocator(this.tableName);
 
     this.autoFlush = autoflush;
+
+    LOG.info("\n\n\t>>> opening connection to '{}'\n",tableName);
   }
 
   private Table getTable() throws IOException {
